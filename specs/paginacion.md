@@ -12,36 +12,30 @@ grandes volúmenes de datos de forma eficiente.
 ```gherkin
 Feature: Paginación de productos
 
-  Scenario: El cliente solicita la primera página de productos
+  Background:
     Given existen 25 productos registrados
-    When el cliente solicita la página 1 con tamaño 10
-    Then el sistema retorna 10 productos
+
+  Scenario Outline: El cliente solicita una página de productos
+    When el cliente solicita la página <page> con tamaño <size>
+    Then el sistema retorna <cantidad> productos
      y la respuesta incluye metadata:
-       | campo          | valor |
-       | totalElements  | 25    |
-       | totalPages     | 3     |
-       | currentPage    | 1     |
-       | size           | 10    |
+       | campo          | valor      |
+       | totalElements  | 25         |
+       | totalPages     | 3          |
+       | currentPage    | <page>     |
+       | size           | <size>     |
 
-  Scenario: El cliente solicita una página intermedia
-    Given existen 25 productos registrados
-    When el cliente solicita la página 2 con tamaño 10
-    Then el sistema retorna 10 productos (los productos 11 al 20)
-     y la respuesta incluye metadata con currentPage = 2
-
-  Scenario: El cliente solicita la última página
-    Given existen 25 productos registrados
-    When el cliente solicita la página 3 con tamaño 10
-    Then el sistema retorna 5 productos (los productos 21 al 25)
-     y la respuesta incluye metadata con currentPage = 3 y totalPages = 3
+    Examples:
+      | page | size | cantidad |
+      | 1    | 10   | 10       |
+      | 2    | 10   | 10       |
+      | 3    | 10   | 5        |
 
   Scenario: El cliente solicita una página sin parámetros
-    Given existen productos registrados
     When el cliente solicita productos sin especificar página ni tamaño
     Then el sistema retorna la página 1 con tamaño por defecto de 10
 
   Scenario: El cliente solicita una página fuera de rango
-    Given existen 25 productos registrados
     When el cliente solicita la página 10 con tamaño 10
     Then el sistema retorna una lista vacía
      y la respuesta incluye metadata con currentPage = 10 y totalPages = 3
@@ -54,8 +48,10 @@ Feature: Paginación de productos
 ```gherkin
 Feature: Paginación de categorías
 
-  Scenario: El cliente solicita categorías paginadas
+  Background:
     Given existen 15 categorías registradas
+
+  Scenario: El cliente solicita categorías paginadas
     When el cliente solicita la página 1 de categorías con tamaño 5
     Then el sistema retorna 5 categorías
      y la respuesta incluye metadata:
@@ -73,8 +69,10 @@ Feature: Paginación de categorías
 ```gherkin
 Feature: Paginación combinada con filtros
 
-  Scenario: El cliente pagina resultados de una búsqueda
+  Background:
     Given existen 30 productos y 12 contienen "Phone" en el nombre
+
+  Scenario: El cliente pagina resultados de una búsqueda
     When el cliente busca "Phone" en la página 1 con tamaño 5
     Then el sistema retorna 5 productos que contienen "Phone"
      y la respuesta incluye metadata con totalElements = 12 y totalPages = 3

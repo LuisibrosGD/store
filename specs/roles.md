@@ -12,28 +12,24 @@ diferentes sobre los recursos del sistema.
 ```gherkin
 Feature: Permisos del administrador
 
-  Scenario: El administrador puede gestionar productos
+  Background:
     Given un usuario autenticado con rol ADMIN
-    When el administrador realiza operaciones CRUD sobre productos
+
+  Scenario Outline: El administrador puede gestionar <recurso>
+    When el administrador realiza operaciones CRUD sobre <recurso>
     Then todas las operaciones son permitidas
 
-  Scenario: El administrador puede gestionar categorías
-    Given un usuario autenticado con rol ADMIN
-    When el administrador realiza operaciones CRUD sobre categorías
-    Then todas las operaciones son permitidas
-
-  Scenario: El administrador puede gestionar usuarios
-    Given un usuario autenticado con rol ADMIN
-    When el administrador realiza operaciones CRUD sobre usuarios
-    Then todas las operaciones son permitidas
+    Examples:
+      | recurso   |
+      | productos |
+      | categorías|
+      | usuarios  |
 
   Scenario: El administrador puede gestionar el estado de las órdenes
-    Given un usuario autenticado con rol ADMIN
     When el administrador cambia el estado de una orden
     Then la operación es permitida
 
   Scenario: El administrador puede ver todas las órdenes
-    Given un usuario autenticado con rol ADMIN
     When el administrador solicita ver todas las órdenes del sistema
     Then el sistema retorna todas las órdenes de todos los clientes
 ```
@@ -45,29 +41,27 @@ Feature: Permisos del administrador
 ```gherkin
 Feature: Permisos del cliente
 
-  Scenario: El cliente puede ver productos
+  Background:
     Given un usuario autenticado con rol CLIENTE
+
+  Scenario: El cliente puede ver productos
     When el cliente solicita ver los productos
     Then la operación es permitida
 
   Scenario: El cliente puede gestionar su carrito
-    Given un usuario autenticado con rol CLIENTE
     When el cliente agrega, modifica o quita productos de su carrito
     Then todas las operaciones sobre su carrito son permitidas
 
   Scenario: El cliente puede realizar compras
-    Given un usuario autenticado con rol CLIENTE
     When el cliente confirma la compra de su carrito
     Then la operación es permitida
 
   Scenario: El cliente puede ver su historial de órdenes
-    Given un usuario autenticado con rol CLIENTE
     When el cliente solicita ver su historial de órdenes
     Then el sistema retorna solo las órdenes del cliente autenticado
 
   Scenario: El cliente puede cancelar sus órdenes pendientes
-    Given un usuario autenticado con rol CLIENTE
-    And el cliente tiene una orden pendiente
+    Given el cliente tiene una orden pendiente
     When el cliente cancela su orden pendiente
     Then la operación es permitida
 ```
@@ -79,28 +73,24 @@ Feature: Permisos del cliente
 ```gherkin
 Feature: Acceso denegado para el cliente
 
-  Scenario: El cliente no puede gestionar productos
+  Background:
     Given un usuario autenticado con rol CLIENTE
-    When el cliente intenta crear, actualizar o eliminar un producto
+
+  Scenario Outline: El cliente no puede gestionar <recurso>
+    When el cliente intenta crear, actualizar o eliminar <recurso>
     Then el sistema rechaza la operación con estado 403
 
-  Scenario: El cliente no puede gestionar categorías
-    Given un usuario autenticado con rol CLIENTE
-    When el cliente intenta crear, actualizar o eliminar una categoría
-    Then el sistema rechaza la operación con estado 403
-
-  Scenario: El cliente no puede gestionar otros usuarios
-    Given un usuario autenticado con rol CLIENTE
-    When el cliente intenta crear, actualizar o eliminar otro usuario
-    Then el sistema rechaza la operación con estado 403
+    Examples:
+      | recurso               |
+      | un producto           |
+      | una categoría         |
+      | otro usuario          |
 
   Scenario: El cliente no puede ver órdenes de otros clientes
-    Given un usuario autenticado con rol CLIENTE
     When el cliente intenta ver una orden que no le pertenece
     Then el sistema rechaza la operación con estado 403
 
   Scenario: El cliente no puede cambiar estados de órdenes
-    Given un usuario autenticado con rol CLIENTE
     When el cliente intenta cambiar el estado de una orden
     Then el sistema rechaza la operación con estado 403
 ```
@@ -112,18 +102,19 @@ Feature: Acceso denegado para el cliente
 ```gherkin
 Feature: Endpoints públicos
 
-  Scenario: Cualquier usuario puede iniciar sesión
+  Background:
     Given no hay token de autenticación
-    When se envía una solicitud POST a /api/usuarios/login
+
+  Scenario Outline: Cualquier usuario puede acceder a <endpoint>
+    When se envía una solicitud POST a <endpoint>
     Then la operación es permitida
 
-  Scenario: Cualquier usuario puede registrar una cuenta
-    Given no hay token de autenticación
-    When se envía una solicitud POST a /api/usuarios
-    Then la operación es permitida
+    Examples:
+      | endpoint              |
+      | /api/usuarios/login   |
+      | /api/usuarios         |
 
   Scenario: Se requiere autenticación para endpoints protegidos
-    Given no hay token de autenticación
     When se envía una solicitud a un endpoint protegido
     Then el sistema rechaza la operación con estado 401
 ```

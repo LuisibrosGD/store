@@ -46,20 +46,20 @@ Feature: Crear una orden desde el carrito
 ```gherkin
 Feature: Consultar una orden
 
-  Scenario: El cliente consulta los datos de una orden
+  Background:
     Given el cliente tiene una orden con id 1
+
+  Scenario: El cliente consulta los datos de una orden
     When el cliente solicita ver los datos de la orden 1
     Then el sistema muestra los datos completos de la orden
          y la orden incluye el listado de ítems
          y el estado de la orden es PENDIENTE
 
   Scenario: El cliente consulta una orden que no existe
-    Given no existe una orden con id 999
     When el cliente solicita ver los datos de la orden 999
     Then el sistema informa que la orden no fue encontrada
 
   Scenario: Un cliente consulta una orden que no le pertenece
-    Given el cliente "Carlos" tiene una orden con id 1
     When el cliente "María" solicita ver los datos de la orden 1
     Then el sistema informa que la orden no fue encontrada
 ```
@@ -93,23 +93,17 @@ Feature: Historial de órdenes del cliente
 ```gherkin
 Feature: Gestión de estados de una orden
 
-  Scenario: El administrador marca una orden como pagada
-    Given la orden 1 tiene estado PENDIENTE
-    When el administrador cambia el estado de la orden 1 a PAGADA
+  Scenario Outline: El administrador cambia el estado de una orden
+    Given la orden 1 tiene estado <estadoActual>
+    When el administrador cambia el estado de la orden 1 a <nuevoEstado>
     Then el sistema confirma el cambio de estado
-         y la orden ahora tiene estado PAGADA
+         y la orden ahora tiene estado <nuevoEstado>
 
-  Scenario: El administrador marca una orden como enviada
-    Given la orden 1 tiene estado PAGADA
-    When el administrador cambia el estado de la orden 1 a ENVIADA
-    Then el sistema confirma el cambio de estado
-         y la orden ahora tiene estado ENVIADA
-
-  Scenario: El administrador marca una orden como entregada
-    Given la orden 1 tiene estado ENVIADA
-    When el administrador cambia el estado de la orden 1 a ENTREGADA
-    Then el sistema confirma el cambio de estado
-         y la orden ahora tiene estado ENTREGADA
+    Examples:
+      | estadoActual | nuevoEstado |
+      | PENDIENTE    | PAGADA      |
+      | PAGADA       | ENVIADA     |
+      | ENVIADA      | ENTREGADA   |
 
   Scenario: El cliente cancela una orden pendiente
     Given la orden 1 tiene estado PENDIENTE

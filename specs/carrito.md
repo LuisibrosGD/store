@@ -26,20 +26,19 @@ Feature: Agregar un producto al carrito
     When el cliente agrega 3 unidades más del producto 1 a su carrito
     Then el ítem "iPhone 15" ahora tiene cantidad 5
 
-  Scenario: El cliente intenta agregar un producto sin stock
-    Given el producto "Agotado" está registrado con id 2 y stock 0
-    When el cliente intenta agregar 1 unidad del producto 2 a su carrito
-    Then el sistema informa que el producto no tiene stock disponible
+  Scenario Outline: El cliente intenta agregar un producto con problemas de stock
+    Given el producto <nombre> está registrado con id <id> y stock <stock>
+    When el cliente intenta agregar <cantidad> unidades del producto <id> a su carrito
+    Then el sistema informa que <error>
          y no se agrega al carrito
 
-  Scenario: El cliente intenta agregar más unidades de las disponibles
-    Given el producto "iPhone 15" está registrado con id 1 y stock 5
-    When el cliente intenta agregar 10 unidades del producto 1 a su carrito
-    Then el sistema informa que no hay stock suficiente
-         y no se agrega al carrito
+    Examples:
+      | nombre   | id | stock | cantidad | error                          |
+      | Agotado  | 2  | 0     | 1        | el producto no tiene stock disponible |
+      | iPhone 15| 1  | 5     | 10       | no hay stock suficiente         |
 
   Scenario: El cliente intenta agregar un producto que no existe
-    Given el producto con identificación "999" no está registrado
+    Given el producto con identificación 999 no está registrado
     When el cliente intenta agregar 1 unidad del producto 999 a su carrito
     Then el sistema informa que el producto no fue encontrado
          y no se modifica el carrito
@@ -52,25 +51,24 @@ Feature: Agregar un producto al carrito
 ```gherkin
 Feature: Cambiar cantidad de un ítem en el carrito
 
-  Scenario: El cliente cambia la cantidad de un ítem
+  Background:
     Given el cliente tiene 2 unidades del producto "iPhone 15" (id 1) en su carrito
+
+  Scenario: El cliente cambia la cantidad de un ítem
     When el cliente cambia la cantidad del producto 1 a 4
     Then el ítem "iPhone 15" ahora tiene cantidad 4
 
   Scenario: El cliente pone la cantidad a cero para quitar el ítem
-    Given el cliente tiene 2 unidades del producto "iPhone 15" (id 1) en su carrito
     When el cliente cambia la cantidad del producto 1 a 0
     Then el ítem "iPhone 15" se elimina del carrito
 
   Scenario: El cliente intenta poner una cantidad mayor al stock
-    Given el cliente tiene 2 unidades del producto "iPhone 15" (id 1) en su carrito
-    And el producto "iPhone 15" tiene stock 3
+    Given el producto "iPhone 15" tiene stock 3
     When el cliente intenta cambiar la cantidad del producto 1 a 10
     Then el sistema informa que no hay stock suficiente
          y la cantidad no se modifica
 
   Scenario: El cliente intenta cambiar la cantidad de un ítem que no está en su carrito
-    Given el cliente no tiene el producto con id 5 en su carrito
     When el cliente intenta cambiar la cantidad del producto 5 a 2
     Then el sistema informa que el producto no está en el carrito
          y no se modifica el carrito
@@ -83,14 +81,15 @@ Feature: Cambiar cantidad de un ítem en el carrito
 ```gherkin
 Feature: Quitar un producto del carrito
 
-  Scenario: El cliente quita un producto de su carrito
+  Background:
     Given el cliente tiene 2 unidades del producto "iPhone 15" (id 1) en su carrito
+
+  Scenario: El cliente quita un producto de su carrito
     When el cliente quita el producto 1 de su carrito
     Then el carrito ya no contiene el producto "iPhone 15"
          y el carrito queda vacío
 
   Scenario: El cliente intenta quitar un producto que no está en su carrito
-    Given el cliente no tiene el producto con id 5 en su carrito
     When el cliente intenta quitar el producto 5 de su carrito
     Then el sistema informa que el producto no está en el carrito
          y no se modifica el carrito

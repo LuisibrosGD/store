@@ -46,26 +46,26 @@ Feature: Crear una categoría
 ```gherkin
 Feature: Consultar categorías
 
-  Scenario: El administrador consulta todas las categorías en formato árbol
+  Background:
     Given existen categorías registradas:
       | nombre       | parentId |
       | Electrónica  |          |
       | Celulares    | 1        |
       | Ropa         |          |
+
+  Scenario: El administrador consulta todas las categorías en formato árbol
     When el administrador solicita ver todas las categorías
     Then el sistema retorna las categorías con su estructura jerárquica
          y "Electrónica" tiene "Celulares" como subcategoría
          y "Ropa" aparece como categoría raíz
 
   Scenario: El administrador consulta los datos de una categoría específica
-    Given la categoría "Electrónica" existe con id 1
     When el administrador solicita ver los datos de la categoría 1
     Then el sistema muestra sus datos completos
          y incluye el listado de subcategorías directas
 
   Scenario: El administrador consulta una categoría que no existe
-    Given la categoría con identificación "999" no está registrada
-    When el administrador solicita ver los datos de la categoría "999"
+    When el administrador solicita ver los datos de la categoría 999
     Then el sistema informa que la categoría no fue encontrada
 ```
 
@@ -76,8 +76,10 @@ Feature: Consultar categorías
 ```gherkin
 Feature: Actualizar una categoría
 
-  Scenario: El administrador actualiza el nombre de una categoría
+  Background:
     Given la categoría "Electrónica" existe con id 1
+
+  Scenario: El administrador actualiza el nombre de una categoría
     When el administrador envía una solicitud para actualizar la categoría 1 con:
       | nombre              |
       | Tecnología          |
@@ -85,15 +87,13 @@ Feature: Actualizar una categoría
          y la categoría ahora se llama "Tecnología"
 
   Scenario: El administrador intenta actualizar una categoría con nombre duplicado
-    Given la categoría "Electrónica" existe con id 1
-    And la categoría "Tecnología" existe con id 2
+    Given la categoría "Tecnología" existe con id 2
     When el administrador intenta cambiar el nombre de la categoría 1 a "Tecnología"
     Then el sistema informa que ya existe una categoría con ese nombre
          y no se realiza la actualización
 
   Scenario: El administrador intenta actualizar una categoría que no existe
-    Given la categoría con identificación "999" no está registrada
-    When el administrador intenta actualizar los datos de la categoría "999"
+    When el administrador intenta actualizar los datos de la categoría 999
     Then el sistema informa que la categoría no fue encontrada
 ```
 
@@ -112,23 +112,20 @@ Feature: Eliminar una categoría
     Then el sistema confirma la eliminación
          y la categoría ya no aparece en el listado
 
-  Scenario: El administrador intenta eliminar una categoría que tiene subcategorías
-    Given la categoría "Electrónica" existe con id 1
-    And la categoría "Electrónica" tiene subcategorías
-    When el administrador intenta eliminar la categoría 1
-    Then el sistema informa que no se puede eliminar porque tiene subcategorías dependientes
+  Scenario Outline: El administrador intenta eliminar una categoría con dependencias
+    Given la categoría <nombre> existe con id <id>
+    And la categoría <nombre> tiene <dependencia>
+    When el administrador intenta eliminar la categoría <id>
+    Then el sistema informa que no se puede eliminar porque tiene <dependencia>
          y no se realiza la eliminación
 
-  Scenario: El administrador intenta eliminar una categoría que tiene productos
-    Given la categoría "Electrónica" existe con id 1
-    And la categoría "Electrónica" tiene productos asociados
-    When el administrador intenta eliminar la categoría 1
-    Then el sistema informa que no se puede eliminar porque tiene productos asociados
-         y no se realiza la eliminación
+    Examples:
+      | nombre      | id | dependencia              |
+      | Electrónica | 1  | subcategorías            |
+      | Electrónica | 1  | productos asociados      |
 
   Scenario: El administrador intenta eliminar una categoría que no existe
-    Given la categoría con identificación "999" no está registrada
-    When el administrador intenta eliminar la categoría "999"
+    When el administrador intenta eliminar la categoría 999
     Then el sistema informa que la categoría no fue encontrada
 ```
 
