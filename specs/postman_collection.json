@@ -1,123 +1,419 @@
 {
   "info": {
-    "name": "Gestión de Usuarios",
-    "description": "API para la gestión de usuarios del sistema. Permite crear, consultar, actualizar, eliminar usuarios e iniciar sesión.",
+    "name": "Store API",
+    "description": "API REST para gestión de tienda: usuarios, categorías, productos, carrito, órdenes y autenticación JWT.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "token",
+      "value": ""
     }
   ],
   "item": [
     {
-      "name": "Listar todos los usuarios",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios"]
-        },
-        "description": "Obtiene el listado completo de usuarios registrados. Retorna un array de objetos con id, nombre y email."
-      },
-      "response": []
+      "name": "Auth",
+      "description": "Autenticación y manejo de tokens JWT.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos@email.com\",\n  \"password\": \"1234\"\n}"
+            },
+            "description": "Autentica un usuario y retorna un token JWT. Copia el token de la respuesta y pégalo en la variable 'token' de la colección."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Obtener usuario por ID",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios/1",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios", "1"]
+      "name": "Usuarios",
+      "description": "CRUD de usuarios del sistema.",
+      "item": [
+        {
+          "name": "Listar todos",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/usuarios", "host": ["{{baseUrl}}"], "path": ["usuarios"] },
+            "description": "Obtiene el listado completo de usuarios."
+          },
+          "response": []
         },
-        "description": "Obtiene los datos de un usuario específico por su identificador. Retorna 404 si no existe."
-      },
-      "response": []
+        {
+          "name": "Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/usuarios/1", "host": ["{{baseUrl}}"], "path": ["usuarios", "1"] },
+            "description": "Obtiene un usuario específico por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/usuarios", "host": ["{{baseUrl}}"], "path": ["usuarios"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Nuevo Usuario\",\n  \"email\": \"nuevo@email.com\",\n  \"password\": \"pass123\"\n}"
+            },
+            "description": "Registra un usuario nuevo con rol CLIENTE por defecto."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/usuarios/1", "host": ["{{baseUrl}}"], "path": ["usuarios", "1"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Nombre Actualizado\",\n  \"email\": \"actualizado@email.com\",\n  \"password\": \"nueva123\"\n}"
+            },
+            "description": "Actualiza todos los datos de un usuario existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/usuarios/3", "host": ["{{baseUrl}}"], "path": ["usuarios", "3"] },
+            "description": "Elimina un usuario por su ID."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Crear usuario",
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios"]
+      "name": "Categorías",
+      "description": "CRUD de categorías con estructura jerárquica.",
+      "item": [
+        {
+          "name": "Listar árbol",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categorias", "host": ["{{baseUrl}}"], "path": ["categorias"] },
+            "description": "Obtiene todas las categorías en formato árbol con sus subcategorías."
+          },
+          "response": []
         },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Nuevo Usuario\",\n  \"email\": \"nuevo@email.com\",\n  \"password\": \"pass123\"\n}"
+        {
+          "name": "Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categorias/1", "host": ["{{baseUrl}}"], "path": ["categorias", "1"] },
+            "description": "Obtiene una categoría por ID con sus subcategorías directas."
+          },
+          "response": []
         },
-        "description": "Registra un usuario nuevo. El email debe ser único y la contraseña obligatoria. Retorna el usuario creado con su id."
-      },
-      "response": []
+        {
+          "name": "Crear categoría raíz",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/categorias", "host": ["{{baseUrl}}"], "path": ["categorias"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Deportes\"\n}"
+            },
+            "description": "Crea una categoría raíz (sin padre)."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear subcategoría",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/categorias", "host": ["{{baseUrl}}"], "path": ["categorias"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Fútbol\",\n  \"padreId\": 7\n}"
+            },
+            "description": "Crea una subcategoría bajo una categoría padre."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/categorias/7", "host": ["{{baseUrl}}"], "path": ["categorias", "7"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Deportes Actualizado\"\n}"
+            },
+            "description": "Actualiza el nombre de una categoría."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/categorias/7", "host": ["{{baseUrl}}"], "path": ["categorias", "7"] },
+            "description": "Elimina una categoría. Falla si tiene subcategorías o productos."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Actualizar usuario",
-      "request": {
-        "method": "PUT",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios/1",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios", "1"]
+      "name": "Productos",
+      "description": "CRUD de productos con búsqueda, filtros y paginación.",
+      "item": [
+        {
+          "name": "Listar (paginado)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos?page=0&size=10", "host": ["{{baseUrl}}"], "path": ["productos"] },
+            "description": "Lista productos paginados. Parámetros: page (inicia en 0), size."
+          },
+          "response": []
         },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Nombre Actualizado\",\n  \"email\": \"actualizado@email.com\",\n  \"password\": \"nueva123\"\n}"
+        {
+          "name": "Obtener por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos/1", "host": ["{{baseUrl}}"], "path": ["productos", "1"] },
+            "description": "Obtiene un producto por su ID."
+          },
+          "response": []
         },
-        "description": "Actualiza todos los datos de un usuario existente. Retorna 404 si no existe, 409 si el email pertenece a otro usuario."
-      },
-      "response": []
+        {
+          "name": "Crear producto",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/productos", "host": ["{{baseUrl}}"], "path": ["productos"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Audífonos Sony\",\n  \"precio\": 199.99,\n  \"stock\": 40,\n  \"categoriaId\": 1\n}"
+            },
+            "description": "Crea un producto nuevo. Requiere categoría existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/productos/1", "host": ["{{baseUrl}}"], "path": ["productos", "1"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"iPhone 15 Pro\",\n  \"precio\": 1099.99,\n  \"stock\": 25,\n  \"categoriaId\": 2\n}"
+            },
+            "description": "Actualiza todos los datos de un producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/productos/6", "host": ["{{baseUrl}}"], "path": ["productos", "6"] },
+            "description": "Elimina un producto por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar stock",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/productos/1/stock", "host": ["{{baseUrl}}"], "path": ["productos", "1", "stock"] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 75\n}"
+            },
+            "description": "Actualiza solo el stock de un producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por nombre",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos/buscar?nombre=iphone&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["productos", "buscar"] },
+            "description": "Busca productos cuyo nombre contenga el texto (no distingue mayúsculas)."
+          },
+          "response": []
+        },
+        {
+          "name": "Filtrar por categoría",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos/filtrar?categoriaId=2&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["productos", "filtrar"] },
+            "description": "Filtra productos por categoría."
+          },
+          "response": []
+        },
+        {
+          "name": "Filtrar por precio",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos/filtrar?precioMin=100&precioMax=1000&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["productos", "filtrar"] },
+            "description": "Filtra productos por rango de precio."
+          },
+          "response": []
+        },
+        {
+          "name": "Filtros combinados",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/productos/filtrar?nombre=samsung&categoriaId=2&precioMin=500&precioMax=2000&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["productos", "filtrar"] },
+            "description": "Combina búsqueda por nombre, categoría y rango de precio."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Eliminar usuario",
-      "request": {
-        "method": "DELETE",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios/1",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios", "1"]
+      "name": "Carrito",
+      "description": "Gestión del carrito de compras (requiere token JWT).",
+      "item": [
+        {
+          "name": "Ver carrito",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/carrito", "host": ["{{baseUrl}}"], "path": ["carrito"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Obtiene el carrito del usuario autenticado con sus ítems y total."
+          },
+          "response": []
         },
-        "description": "Elimina un usuario por su identificador. Retorna 204 sin contenido o 404 si no existe."
-      },
-      "response": []
+        {
+          "name": "Agregar producto",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/carrito/items", "host": ["{{baseUrl}}"], "path": ["carrito", "items"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"cantidad\": 2\n}"
+            },
+            "description": "Agrega un producto al carrito. Si ya existe, suma la cantidad."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar cantidad",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/carrito/items/1", "host": ["{{baseUrl}}"], "path": ["carrito", "items", "1"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 5\n}"
+            },
+            "description": "Cambia la cantidad de un producto en el carrito. Si cantidad es 0, lo quita."
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar producto",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/carrito/items/1", "host": ["{{baseUrl}}"], "path": ["carrito", "items", "1"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Elimina un producto del carrito."
+          },
+          "response": []
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/carrito", "host": ["{{baseUrl}}"], "path": ["carrito"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Elimina todos los ítems del carrito."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Iniciar sesión",
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{baseUrl}}/usuarios/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["usuarios", "login"]
+      "name": "Órdenes",
+      "description": "Gestión de órdenes de compra (requiere token JWT).",
+      "item": [
+        {
+          "name": "Checkout (crear orden)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/ordenes/checkout", "host": ["{{baseUrl}}"], "path": ["ordenes", "checkout"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Crea una orden desde el carrito. Reduce el stock y vacía el carrito."
+          },
+          "response": []
         },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"carlos@email.com\",\n  \"password\": \"1234\"\n}"
+        {
+          "name": "Historial de órdenes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordenes", "host": ["{{baseUrl}}"], "path": ["ordenes"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Lista las órdenes del usuario autenticado ordenadas de más reciente a más antigua."
+          },
+          "response": []
         },
-        "description": "Autentica un usuario con email y contraseña. Retorna los datos del usuario o 401 si las credenciales son incorrectas."
-      },
-      "response": []
+        {
+          "name": "Obtener orden por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordenes/1", "host": ["{{baseUrl}}"], "path": ["ordenes", "1"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Obtiene los datos de una orden específica. Solo el dueño puede verla."
+          },
+          "response": []
+        },
+        {
+          "name": "Todas las órdenes (admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/ordenes/admin/todas", "host": ["{{baseUrl}}"], "path": ["ordenes", "admin", "todas"] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Lista todas las órdenes de todos los usuarios."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar estado de orden",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/ordenes/1/estado", "host": ["{{baseUrl}}"], "path": ["ordenes", "1", "estado"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"PAGADA\"\n}"
+            },
+            "description": "Cambia el estado de una orden. Estados válidos: PENDIENTE, PAGADA, ENVIADA, ENTREGADA, CANCELADA."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
