@@ -2,9 +2,9 @@
 
 ## Descripción general
 
-El administrador gestiona los usuarios del sistema (clientes), pudiendo crear,
+El administrador gestiona los usuarios del sistema, pudiendo crear,
 consultar, actualizar y eliminar registros. Las operaciones se realizan a través
-de la API del sistema.
+de la API del sistema. Solo los usuarios con rol ADMIN pueden gestionar usuarios.
 
 ---
 
@@ -13,14 +13,35 @@ de la API del sistema.
 ```gherkin
 Feature: Crear un usuario
 
-  Scenario: El administrador registra un usuario nuevo
+  Background:
+    Given el administrador está autenticado con rol ADMIN
+
+  Scenario: El administrador registra un usuario nuevo con rol CLIENTE
     Given el email "ana@email.com" no está registrado
     When el administrador envía una solicitud para crear un usuario con:
-      | nombre     | email           | contraseña |
-      | Ana García | ana@email.com   | pass123    |
+      | nombre     | email           | contraseña | rol     |
+      | Ana García | ana@email.com   | pass123    | CLIENTE |
     Then el sistema confirma la creación del usuario
          y el usuario "Ana García" aparece en el listado
+         y el usuario tiene rol CLIENTE
          y puede iniciar sesión con sus credenciales
+
+  Scenario: El administrador registra un usuario nuevo con rol ADMIN
+    Given el email "admin_nuevo@email.com" no está registrado
+    When el administrador envía una solicitud para crear un usuario con:
+      | nombre       | email                 | contraseña | rol  |
+      | Pedro Admin  | admin_nuevo@email.com | admin123   | ADMIN |
+    Then el sistema confirma la creación del usuario
+         y el usuario "Pedro Admin" aparece en el listado
+         y el usuario tiene rol ADMIN
+
+  Scenario: El administrador registra un usuario sin especificar rol
+    Given el email "sinrol@email.com" no está registrado
+    When el administrador envía una solicitud para crear un usuario con:
+      | nombre     | email             | contraseña |
+      | Luis Gómez | sinrol@email.com  | pass123    |
+    Then el sistema confirma la creación del usuario
+         y el usuario tiene rol CLIENTE por defecto
 
   Scenario: El administrador intenta registrar un usuario con email ya registrado
     Given el email "carlos@email.com" ya está registrado
@@ -37,12 +58,30 @@ Feature: Crear un usuario
       | Luis Gómez | luis@email.com  |            |
     Then el sistema indica que la contraseña es obligatoria
          y no se crea un nuevo usuario
+
+  Scenario: El administrador intenta registrar un usuario con rol inválido
+    Given el email "otro@email.com" no está registrado
+    When el administrador envía una solicitud para crear un usuario con:
+      | nombre     | email           | contraseña | rol      |
+      | Test User  | otro@email.com  | pass123    | SUPERVISOR |
+    Then el sistema indica que el rol debe ser ADMIN o CLIENTE
+         y no se crea un nuevo usuario
+
+  Scenario: Un cliente no puede crear usuarios
+    Given un usuario autenticado con rol CLIENTE
+    When el cliente envía una solicitud para crear un usuario con:
+      | nombre     | email             | contraseña |
+      | Nuevo User | nuevo@email.com   | pass123    |
+    Then el sistema rechaza la operación con estado 403
 ```
 ---
 ## Consultar usuarios
 ```gherkin
 
 Feature: Consultar usuarios
+
+  Background:
+    Given el administrador está autenticado con rol ADMIN
 
   Scenario: El administrador consulta todos los usuarios registrados
     Given existen usuarios registrados en el sistema
@@ -66,6 +105,9 @@ Feature: Consultar usuarios
 ## Actualizar un usuario
 ```gherkin
 Feature: Actualizar un usuario
+
+  Background:
+    Given el administrador está autenticado con rol ADMIN
 
   Scenario: El administrador actualiza los datos de un usuario existente
     Given el usuario "Carlos Pérez" está registrado con email "carlos@email.com"
@@ -98,9 +140,12 @@ Feature: Actualizar un usuario
          y no se realiza la actualización
 ```
 ---
-## Actualizar un usuario
+## Eliminar un usuario
 ```gherkin
 Feature: Eliminar un usuario
+
+  Background:
+    Given el administrador está autenticado con rol ADMIN
 
   Scenario: El administrador elimina un usuario existente
     Given el usuario "Carlos Pérez" está registrado
@@ -117,7 +162,8 @@ Feature: Eliminar un usuario
 ```
 
 ---
-## Actualizar un usuario
+
+## Iniciar sesión
 
 ```gherkin
 Feature: Iniciar sesión
