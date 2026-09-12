@@ -38,6 +38,14 @@ src/main/java/com/example/store/
 
 Se requiere MySQL corriendo en `localhost:3306` con una base de datos llamada `store`.
 
+Antes de iniciar, configura las credenciales y un secreto JWT de al menos 32 caracteres:
+
+```powershell
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="tu-clave-local"
+$env:JWT_SECRET="genera-un-secreto-aleatorio-de-al-menos-32-caracteres"
+```
+
 ```bash
 ./mvnw spring-boot:run
 ```

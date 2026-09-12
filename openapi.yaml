@@ -1,0 +1,1239 @@
+openapi: 3.1.0
+info:
+  title: Store API
+  version: 1.0.0
+  description: |
+    Contrato derivado de los controladores, DTO, servicios, seguridad y manejadores
+    de excepciones del backend Spring Boot. La API usa JSON y autenticación JWT Bearer.
+
+    La paginación canónica usa `page` con índice inicial 1. Por compatibilidad, también
+    se acepta `pageIndex` con índice inicial 0; cuando ambos se envían, `pageIndex`
+    prevalece. No existe ordenamiento configurable en los endpoints actuales.
+servers:
+  - url: http://localhost:8080/api
+    description: Entorno local
+tags:
+  - name: Autenticación
+  - name: Usuarios
+  - name: Categorías
+  - name: Productos
+  - name: Carrito
+  - name: Órdenes
+
+paths:
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Autenticación correcta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /usuarios/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión mediante la ruta compatible
+      description: Alias exacto de `POST /auth/login`.
+      operationId: loginLegacy
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Autenticación correcta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /auth/refresh:
+    post:
+      tags: [Autenticación]
+      summary: Renovar el JWT e invalidar la versión anterior
+      operationId: refreshToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Nuevo token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar todos los usuarios
+      operationId: listarUsuarios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuarios registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    post:
+      tags: [Usuarios]
+      summary: Registrar usuario o crear usuario como administrador
+      description: |
+        Un visitante siempre crea un usuario `CLIENTE`, incluso si envía `role`.
+        Un administrador autenticado puede asignar `ADMIN` o `CLIENTE`.
+      operationId: crearUsuario
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioRequest'
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+  /usuarios/me:
+    get:
+      tags: [Usuarios]
+      summary: Obtener el perfil autenticado
+      operationId: obtenerMiPerfil
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Usuarios]
+      summary: Actualizar el perfil autenticado
+      description: No permite cambiar el rol. La contraseña se reemplaza por el valor enviado.
+      operationId: actualizarMiPerfil
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilRequest'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+    delete:
+      tags: [Usuarios]
+      summary: Eliminar la cuenta autenticada
+      operationId: eliminarMiCuenta
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Cuenta eliminada
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /usuarios/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Usuarios]
+      summary: Obtener usuario por ID
+      operationId: obtenerUsuario
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Usuarios]
+      summary: Actualizar un usuario
+      operationId: actualizarUsuario
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioRequest'
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+    delete:
+      tags: [Usuarios]
+      summary: Eliminar un usuario
+      operationId: eliminarUsuario
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Usuario eliminado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /categorias:
+    get:
+      tags: [Categorías]
+      summary: Listar el árbol de categorías
+      operationId: listarCategorias
+      security: []
+      responses:
+        '200':
+          description: Categorías raíz con subcategorías anidadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoriaResponse'
+    post:
+      tags: [Categorías]
+      summary: Crear una categoría
+      description: Solo admite categorías raíz o un segundo nivel de profundidad.
+      operationId: crearCategoria
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+  /categorias/paginadas:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías paginadas
+      operationId: listarCategoriasPaginadas
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Página de categorías sin subárbol expandido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaCategoriaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  /categorias/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Categorías]
+      summary: Obtener categoría por ID
+      operationId: obtenerCategoria
+      security: []
+      responses:
+        '200':
+          description: Categoría con sus descendientes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Categorías]
+      summary: Actualizar el nombre de una categoría
+      description: El backend conserva el padre actual e ignora `padreId` durante esta operación.
+      operationId: actualizarCategoria
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaRequest'
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+    delete:
+      tags: [Categorías]
+      summary: Eliminar una categoría sin dependencias
+      operationId: eliminarCategoria
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Categoría eliminada
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /productos:
+    get:
+      tags: [Productos]
+      summary: Listar productos paginados
+      operationId: listarProductos
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Página de productos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaProductoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+    post:
+      tags: [Productos]
+      summary: Crear un producto
+      operationId: crearProducto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /productos/buscar:
+    get:
+      tags: [Productos]
+      summary: Buscar productos por nombre
+      operationId: buscarProductos
+      security: []
+      parameters:
+        - name: nombre
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Productos cuyo nombre contiene el texto, sin distinguir mayúsculas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaProductoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  /productos/filtrar:
+    get:
+      tags: [Productos]
+      summary: Filtrar productos
+      operationId: filtrarProductos
+      security: []
+      parameters:
+        - name: nombre
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: categoriaId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: precioMin
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+        - name: precioMax
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Página de productos filtrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaProductoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  /productos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Productos]
+      summary: Obtener producto por ID
+      operationId: obtenerProducto
+      security: []
+      responses:
+        '200':
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Productos]
+      summary: Reemplazar los datos de un producto
+      operationId: actualizarProducto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+      responses:
+        '200':
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Productos]
+      summary: Eliminar un producto
+      operationId: eliminarProducto
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Producto eliminado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /productos/{id}/stock:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    patch:
+      tags: [Productos]
+      summary: Actualizar únicamente el stock
+      operationId: actualizarStockProducto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockRequest'
+      responses:
+        '200':
+          description: Producto con stock actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /carrito:
+    get:
+      tags: [Carrito]
+      summary: Obtener o crear el carrito del usuario autenticado
+      operationId: obtenerCarrito
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Carrito actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarritoResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Carrito]
+      summary: Vaciar el carrito
+      operationId: vaciarCarrito
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Carrito vaciado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /carrito/items:
+    post:
+      tags: [Carrito]
+      summary: Agregar un producto al carrito
+      description: Si el producto ya está presente, suma la cantidad enviada.
+      operationId: agregarItemCarrito
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgregarItemRequest'
+      responses:
+        '201':
+          description: Carrito actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarritoResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /carrito/items/{productoId}:
+    parameters:
+      - name: productoId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    put:
+      tags: [Carrito]
+      summary: Establecer la cantidad de un producto
+      description: Una cantidad igual a cero elimina el producto del carrito.
+      operationId: cambiarCantidadCarrito
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarCantidadRequest'
+      responses:
+        '200':
+          description: Carrito actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarritoResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Carrito]
+      summary: Quitar un producto del carrito
+      operationId: quitarItemCarrito
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Producto retirado
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /ordenes:
+    get:
+      tags: [Órdenes]
+      summary: Listar las órdenes del usuario autenticado
+      description: Se devuelven de la más reciente a la más antigua.
+      operationId: listarMisOrdenes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Historial propio
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrdenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /ordenes/checkout:
+    post:
+      tags: [Órdenes]
+      summary: Crear una orden desde el carrito
+      description: Reduce el stock y vacía el carrito cuando la transacción termina correctamente.
+      operationId: checkout
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Orden creada en estado PENDIENTE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /ordenes/admin/todas:
+    get:
+      tags: [Órdenes]
+      summary: Listar todas las órdenes
+      operationId: listarTodasLasOrdenes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Órdenes de todos los usuarios, de la más reciente a la más antigua
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrdenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /ordenes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Órdenes]
+      summary: Obtener una orden
+      description: Un cliente solo puede ver una orden propia; para una ajena el backend responde 404. Un administrador puede ver cualquiera.
+      operationId: obtenerOrden
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orden encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /ordenes/{id}/estado:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    patch:
+      tags: [Órdenes]
+      summary: Avanzar el estado de una orden
+      description: Solo admite PENDIENTE→PAGADA, PAGADA→ENVIADA y ENVIADA→ENTREGADA.
+      operationId: cambiarEstadoOrden
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoRequest'
+      responses:
+        '200':
+          description: Orden actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /ordenes/{id}/cancelar:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      tags: [Órdenes]
+      summary: Cancelar una orden pendiente propia
+      description: Restaura el stock de todos sus ítems.
+      operationId: cancelarOrden
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orden cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token emitido por `/auth/login`; expira a las 24 horas y contiene id, email, role y tokenVersion.
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Page:
+      name: page
+      in: query
+      description: Página con índice inicial 1. El valor 0 también representa la primera página.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 1
+    PageIndex:
+      name: pageIndex
+      in: query
+      description: Alternativa compatible con índice inicial 0; prevalece sobre `page`.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+    Size:
+      name: size
+      in: query
+      description: Cantidad de elementos por página. El backend no impone un máximo.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+  responses:
+    BadRequestError:
+      description: Solicitud inválida o regla de negocio incumplida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Error de validación del cuerpo; también puede ser una regla de negocio inválida
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ValidationErrorResponse'
+              - $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Credenciales incorrectas, JWT ausente, inválido, expirado o invalidado por versión
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Usuario autenticado sin el rol requerido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Recurso duplicado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    AuthRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+    AuthResponse:
+      type: object
+      required: [token, id, email, role]
+      properties:
+        token:
+          type: string
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+    UsuarioRequest:
+      type: object
+      additionalProperties: false
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+        role:
+          oneOf:
+            - $ref: '#/components/schemas/Role'
+            - type: 'null'
+          description: Opcional. Solo se respeta cuando quien crea es ADMIN.
+    ActualizarPerfilRequest:
+      type: object
+      additionalProperties: false
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+          description: Contraseña nueva; el backend no solicita la contraseña anterior.
+    UsuarioResponse:
+      type: object
+      required: [id, nombre, email, role]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+    Role:
+      type: string
+      enum: [ADMIN, CLIENTE]
+    CategoriaRequest:
+      type: object
+      additionalProperties: false
+      required: [nombre]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        padreId:
+          type: [integer, 'null']
+          format: int64
+          description: También se acepta el alias JSON `parentId`.
+    CategoriaResponse:
+      type: object
+      required: [id, nombre, padreId, subcategorias]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        padreId:
+          type: [integer, 'null']
+          format: int64
+        subcategorias:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoriaResponse'
+    ProductoRequest:
+      type: object
+      additionalProperties: false
+      required: [nombre, precio, stock, categoriaId]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        precio:
+          type: number
+          format: double
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        categoriaId:
+          type: integer
+          format: int64
+    ProductoResponse:
+      type: object
+      required: [id, nombre, precio, stock, categoriaId, categoriaNombre]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        precio:
+          type: number
+          format: double
+        stock:
+          type: integer
+        categoriaId:
+          type: integer
+          format: int64
+        categoriaNombre:
+          type: string
+    StockRequest:
+      type: object
+      additionalProperties: false
+      required: [stock]
+      properties:
+        stock:
+          type: integer
+          minimum: 0
+    AgregarItemRequest:
+      type: object
+      additionalProperties: false
+      required: [productoId, cantidad]
+      properties:
+        productoId:
+          type: integer
+          format: int64
+        cantidad:
+          type: integer
+          minimum: 1
+    CambiarCantidadRequest:
+      type: object
+      additionalProperties: false
+      required: [cantidad]
+      properties:
+        cantidad:
+          type: integer
+          minimum: 0
+    CarritoItemResponse:
+      type: object
+      required: [id, productoId, productoNombre, productoPrecio, cantidad, subtotal]
+      properties:
+        id:
+          type: integer
+          format: int64
+        productoId:
+          type: integer
+          format: int64
+        productoNombre:
+          type: string
+        productoPrecio:
+          type: number
+          format: double
+        cantidad:
+          type: integer
+        subtotal:
+          type: number
+          format: double
+    CarritoResponse:
+      type: object
+      required: [id, items, total]
+      properties:
+        id:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarritoItemResponse'
+        total:
+          type: number
+          format: double
+    CambiarEstadoRequest:
+      type: object
+      additionalProperties: false
+      required: [estado]
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoOrden'
+    EstadoOrden:
+      type: string
+      enum: [PENDIENTE, PAGADA, ENVIADA, ENTREGADA, CANCELADA]
+    OrdenItemResponse:
+      type: object
+      required: [id, productoId, productoNombre, cantidad, precioUnitario, subtotal]
+      properties:
+        id:
+          type: integer
+          format: int64
+        productoId:
+          type: integer
+          format: int64
+        productoNombre:
+          type: string
+        cantidad:
+          type: integer
+        precioUnitario:
+          type: number
+          format: double
+        subtotal:
+          type: number
+          format: double
+    OrdenResponse:
+      type: object
+      required: [id, usuarioId, estado, total, fechaCreacion, items]
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        estado:
+          $ref: '#/components/schemas/EstadoOrden'
+        total:
+          type: number
+          format: double
+        fechaCreacion:
+          type: [string, 'null']
+          description: LocalDateTime serializado con `toString()`; normalmente ISO-8601 sin zona horaria.
+          examples: ['2026-09-11T14:30:00.123']
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrdenItemResponse'
+    PaginaProductoResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductoResponse'
+    PaginaCategoriaResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoriaResponse'
+    PaginaBase:
+      type: object
+      required: [content, totalElements, totalPages, currentPage, size]
+      properties:
+        content:
+          type: array
+          items: {}
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        currentPage:
+          type: integer
+          minimum: 1
+        size:
+          type: integer
+          minimum: 1
+    ErrorResponse:
+      type: object
+      required: [timestamp, status, error, message]
+      properties:
+        timestamp:
+          type: string
+          description: Fecha y hora local serializada como texto ISO-8601.
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+    ValidationErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          required: [errors]
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: string
+
+# TODO: El backend no incluye un manejador explícito para errores de conversión de parámetros
+# (por ejemplo, `page=abc`) ni para errores internos de persistencia. Spring generará esas
+# respuestas con su formato por defecto, que puede variar entre versiones; no se documenta un
+# schema estable para esos casos hasta que el backend defina un contrato explícito.
